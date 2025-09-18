@@ -13,9 +13,13 @@ const httpServer = createServer(app);
 // Initialize Socket.IO server with HTTP server and configuration
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.APP_URL, // Allow Next.js dev server (adjust for production)
-    methods: ["GET", "POST"], // Allowed HTTP methods
-    credentials: true, // Allow credentials (cookies, authorization headers)
+    origin: [
+      "http://localhost:3000", // Your local Next.js dev server
+      "https://pedbc.pcmc.gov.ph" // Your production domain
+    ],
+    methods: ["GET", "POST"], // Allowed HTTP methods for the handshake
+    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Upgrade"],
+    credentials: true,
   },
   // Connection timeout settings
   pingTimeout: 60000, // Time to wait for pong response before disconnecting
@@ -25,7 +29,7 @@ const io = new Server(httpServer, {
 // Enable CORS for Express routes (for REST API endpoints if needed)
 app.use(
   cors({
-    origin: process.env.APP_URL,
+    origin: "*",
     credentials: true,
   })
 );
@@ -45,6 +49,14 @@ io.on("connection", (socket) => {
   console.log("User sessions on connect:", userSessions);
   console.log("User rooms on connect:", userRooms);
   console.log("Socket to User map on connect:", socketToUser);
+
+  // Access and log the client's origin domain
+  const clientOrigin = socket.handshake.headers.origin;
+  console.log(`Client's origin domain: ${clientOrigin}`);
+
+  // You can also check the referer header as a fallback
+  const clientReferer = socket.handshake.headers.referer;
+  console.log(`Client's referer: ${clientReferer}`);
 
   // Handle user authentication/identification
   socket.on("authenticate", (userData) => {
