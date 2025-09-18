@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "SOCKET-SERVER",
+      "script": "index.js",
+      "env": {
+        "PORT": "4000",
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

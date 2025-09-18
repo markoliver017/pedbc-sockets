@@ -369,7 +369,7 @@ app.get("/api/connected-users", (req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
-  console.log(`Socket.IO server running on ${process.env.APP_URL}`);
+  console.log(`Socket.IO server running on ${process.env.APP_URL} on port: ${PORT}`);
   console.log("Ready to accept WebSocket connections...");
 });
 
