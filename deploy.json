@@ -1,0 +1,11 @@
+{
+  "apps": [
+    {
+      "name": "pedbc-web-hooks",
+      "script": "./index.js",
+      "env": {
+        "PORT": "5050"
+      }
+    }
+  ]
+}
