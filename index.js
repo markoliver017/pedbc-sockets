@@ -27,7 +27,7 @@ app.use(
   cors({
     origin: process.env.APP_URL,
     credentials: true,
-  })
+  }),
 );
 
 // Middleware to parse JSON requests
@@ -48,45 +48,27 @@ io.on("connection", (socket) => {
 
   // Handle user authentication/identification
   socket.on("authenticate", (userData) => {
-    if (!userData || !userData.userId) return; // Basic validation
-    const userId = userData.userId;
-    const userRole = userData?.role || null;
+    if (!userData?.userId) return;
+    const { userId, role, name } = userData;
 
     socketToUser.set(socket.id, userId);
 
-    // Initialize or update user sessions
-    if (!userSessions.has(userId)) {
-      userSessions.set(userId, {
-        userData,
-        connectedAt: new Date(),
-      });
-    }
-
-    // Initialize user rooms if first connection
-    if (!userRooms.has(userId)) {
-      userRooms.set(userId, new Set([`user_${userId}`]));
-    }
-    // if (userRole && !userRooms.has(userRole)) {
-    //   userRooms.set(userRole, new Set([`role_${userRole}`]));
-    // }else{
-
-    // }
-
-    console.log(`User authenticated: ${userData.name} (${socket.id})`);
-
-    // Join user's notification room
-    socket.join(`user_${userId}`);
-    if (userRole) socket.join(userRole);
-
-    // Emit authentication success back to client
-    socket.emit("authenticated", {
-      status: "success",
+    // Update session
+    userSessions.set(userId, {
+      name,
+      role,
       socketId: socket.id,
+      connectedAt: new Date(),
     });
 
-    // Get an array of all the Set objects from userSessions
-    const activeUsers = Array.from(userSessions.values()); //or [...userSessions.values()]
-    io.emit("connected_users", activeUsers);
+    // Clean room joining
+    socket.join(`user_${userId}`);
+    if (role) socket.join(`role_${role}`);
+
+    console.log(`Authenticated: ${name} [${role}]`);
+
+    socket.emit("authenticated", { status: "success" });
+    io.emit("connected_users", Array.from(userSessions.values()));
   });
 
   // Handle client disconnection
@@ -96,7 +78,6 @@ io.on("connection", (socket) => {
     if (userId) {
       userSessions.delete(userId);
       userRooms.delete(userId);
-      socketToUser.delete(socket.id);
     }
     const activeUsers = Array.from(userSessions.values()); //or [...userSessions.values()]
     io.emit("connected_users", activeUsers);
@@ -135,7 +116,7 @@ io.on("connection", (socket) => {
     userRooms.set(userId, updatedRooms);
 
     console.log(
-      `Socket ${socket.id} with userID: ${userId} left room: ${roomName}`
+      `Socket ${socket.id} with userID: ${userId} left room: ${roomName}`,
     );
 
     // Notify other users in the room about user leaving
@@ -165,7 +146,7 @@ io.on("connection", (socket) => {
       // Send to specific user's notification room
       io.to(`user_${notificationData.targetUserId}`).emit(
         "notification",
-        notification
+        notification,
       );
     } else if (notificationData.targetRoom) {
       // Send to specific room
